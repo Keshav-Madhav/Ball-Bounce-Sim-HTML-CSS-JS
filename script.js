@@ -6,6 +6,28 @@ var radius = 10;
 var isMouseDown = false;
 var timeDifference = 0;
 
+var RenderCurve = false;
+const curveBtn = document.getElementById('curve');
+curveBtn.addEventListener('click', () => {
+    RenderCurve = !RenderCurve;
+    if(RenderCurve) {
+        curveBtn.innerHTML = "Hide Curve";
+    } else {
+        curveBtn.innerHTML = "Show Curve";
+    }
+});
+
+var BallCollision = true;
+const ballCollisionBtn = document.getElementById('ball-collision');
+ballCollisionBtn.addEventListener('click', () => {
+    BallCollision = !BallCollision;
+    if(BallCollision) {
+        ballCollisionBtn.innerHTML = "Disable Ball Collision";
+    } else {
+        ballCollisionBtn.innerHTML = "Enable Ball Collision";
+    }
+});
+
 function handleStart(event) {
     mouseDownX = event.clientX || event.touches[0].clientX;
     mouseDownY = event.clientY || event.touches[0].clientY;
@@ -107,18 +129,22 @@ var balls = [
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // // Draw the curve
-    // ctx.beginPath();
-    // ctx.moveTo(0, curve(0));
-    // for(var x = 1; x <= canvas.width; x++) {
-    //     ctx.lineTo(x, curve(x));
-    // }
-    // ctx.strokeStyle = "white";
-    // ctx.stroke();
+    // Draw the curve
+    if(RenderCurve){
+        ctx.beginPath();
+        ctx.moveTo(0, curve(0));
+        for(var x = 1; x <= canvas.width; x++) {
+            ctx.lineTo(x, curve(x));
+        }
+        ctx.strokeStyle = "white";
+        ctx.stroke();
+    }
     
     for(var i = 0; i < balls.length; i++) {
         balls[i].draw();
-        // handleCurveCollision(balls[i]);
+        if(RenderCurve) {
+            handleCurveCollision(balls[i]);
+        }
         balls[i].update();
     }
 
@@ -135,14 +161,16 @@ function draw() {
         }
     }
 
-    for(var i = 0; i < balls.length; i++) {
-        for(var j = i + 1; j < balls.length; j++) {
-            var dx = balls[i].x - balls[j].x;
-            var dy = balls[i].y - balls[j].y;
-            var distance = Math.sqrt(dx * dx + dy * dy);
-
-            if(distance < balls[i].radius + balls[j].radius) {
-                collide(balls[i], balls[j]);
+    if(BallCollision) {
+        for(var i = 0; i < balls.length; i++) {
+            for(var j = i + 1; j < balls.length; j++) {
+                var dx = balls[i].x - balls[j].x;
+                var dy = balls[i].y - balls[j].y;
+                var distance = Math.sqrt(dx * dx + dy * dy);
+    
+                if(distance < balls[i].radius + balls[j].radius) {
+                    collide(balls[i], balls[j]);
+                }
             }
         }
     }
@@ -166,7 +194,6 @@ function curveDerivative(x) {
 }
 
 function handleCurveCollision(ball) {
-
     var curveY = curve(ball.x);
     if(ball.y + ball.radius >= curveY) {
         var slope = curveDerivative(ball.x);
@@ -175,12 +202,17 @@ function handleCurveCollision(ball) {
         var velocity = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
         var direction = Math.atan2(ball.dy, ball.dx);
         direction = 2 * angleOfIncidence - direction;
-        ball.dx = velocity * Math.cos(direction);
-        ball.dy = velocity * Math.sin(direction);
+        
+        var curveFriction = 0.999;
+
+        // Apply the elasticity and friction to the velocity
+        ball.dx = velocity * Math.cos(direction) * curveFriction * ball.elasticity;
+        ball.dy = velocity * Math.sin(direction) * curveFriction * ball.elasticity;
 
         ball.y = curveY - ball.radius;
     }
 }
+
 
 function distance(x1, y1, x2, y2) {
     var dx = x1 - x2;
