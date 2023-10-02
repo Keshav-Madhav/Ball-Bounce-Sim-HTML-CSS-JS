@@ -28,6 +28,15 @@ ballCollisionBtn.addEventListener('click', () => {
     }
 });
 
+var Gravity = 0.1;
+const gravityInput = document.getElementById('gravity');
+gravityInput.addEventListener('change', () => {
+    Gravity = gravityInput.value;
+});
+
+var ballcount = 0;
+const ballCount = document.getElementById('ball-count');
+
 function handleStart(event) {
     mouseDownX = event.clientX || event.touches[0].clientX;
     mouseDownY = event.clientY || event.touches[0].clientY;
@@ -52,9 +61,13 @@ function handleEnd(event) {
 
     if(distance < 5) {
         var ball = new Ball(mouseDownX, mouseDownY, 0, 0, radius);
+        ballcount++;
+
     } else {
         var ball = new Ball(mouseDownX, mouseDownY, (mouseUpX - mouseDownX) * speed, (mouseUpY - mouseDownY) * speed, radius);
+        ballcount++;
     }
+    ballCount.innerHTML = `Ball Count: ${ballcount}`;
 
     balls.push(ball);
 
@@ -90,7 +103,7 @@ class Ball {
         this.dy = dy;
         this.radius = radius;
         this.weight = this.radius * 0.1;
-        this.gravity = 0.1 * this.weight; 
+        this.gravity = Gravity * this.weight; 
         this.friction = 0.8;
         this.elasticity = 0.9;
     }
@@ -206,8 +219,8 @@ function handleCurveCollision(ball) {
         var curveFriction = 0.999;
 
         // Apply the elasticity and friction to the velocity
-        ball.dx = velocity * Math.cos(direction) * curveFriction * ball.elasticity;
-        ball.dy = velocity * Math.sin(direction) * curveFriction * ball.elasticity;
+        ball.dx = velocity * Math.cos(direction) * curveFriction;
+        ball.dy = velocity * Math.sin(direction) * curveFriction;
 
         ball.y = curveY - ball.radius;
     }
