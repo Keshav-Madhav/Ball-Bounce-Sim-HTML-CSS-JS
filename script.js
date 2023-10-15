@@ -28,6 +28,42 @@ ballCollisionBtn.addEventListener('click', () => {
     }
 });
 
+var wallCollisions = true;
+const wallCollisionBtn = document.getElementById('wall-collision');
+wallCollisionBtn.addEventListener('click', () => {
+    wallCollisions = !wallCollisions;
+    if(wallCollisions) {
+        wallCollisionBtn.innerHTML = "Disable Wall Collision";
+    } else {
+        wallCollisionBtn.innerHTML = "Enable Wall Collision";
+    }
+});
+
+var toggle = document.getElementById('toggle');
+
+// var blockWidth = document.getElementById('width');
+// var rectWidth = 20;
+// blockWidth.addEventListener('change', () => {
+//     rectWidth = blockWidth.value;
+// });
+
+// var blockHeight = document.getElementById('height');
+// var rectHeight = 20;
+// blockHeight.addEventListener('change', () => {
+//     rectHeight = blockHeight.value;
+// });
+
+var rectWidth = 20;
+var rectHeight = 20;
+
+var clear = document.getElementById('clear');
+clear.addEventListener('click', () => {
+    balls = [];
+    rectangles = [];
+    ballcount = 0;
+    ballCount.innerHTML = "Ball Count: " + ballcount;
+});
+
 var Gravity = 0.1;
 const gravityInput = document.getElementById('gravity');
 gravityInput.addEventListener('change', () => {
@@ -59,20 +95,24 @@ function handleEnd(event) {
 
     var speed = distance / (timeDifference*15000);
 
-    if(distance < 5) {
-        var ball = new Ball(mouseDownX, mouseDownY, 0, 0, radius);
-        ballcount++;
-
+    if(toggle.checked) {
+        // If the toggle is checked, create a new rectangle
+        var rectangle = new Rectangle(mouseDownX, mouseDownY, (mouseUpX - mouseDownX) * speed, (mouseUpY - mouseDownY) * speed, radius*2, radius*2);
+        rectangles.push(rectangle);
     } else {
-        var ball = new Ball(mouseDownX, mouseDownY, (mouseUpX - mouseDownX) * speed, (mouseUpY - mouseDownY) * speed, radius);
+        // If the toggle is not checked, create a new ball
+        if(distance < 5) {
+            var ball = new Ball(mouseDownX, mouseDownY, 0, 0, radius);
+        } else {
+            var ball = new Ball(mouseDownX, mouseDownY, (mouseUpX - mouseDownX) * speed, (mouseUpY - mouseDownY) * speed, radius);
+        }
+        balls.push(ball);
         ballcount++;
     }
-    ballCount.innerHTML = `Ball Count: ${ballcount}`;
-
-    balls.push(ball);
 
     isMouseDown = false;
 }
+
 
 function handleMove(event) {
     mouseX = event.clientX || event.touches[0].clientX;
@@ -117,27 +157,112 @@ class Ball {
     }
 
     update() {
-        if(this.x + this.dx > canvas.width-this.radius || this.x + this.dx < this.radius) {
-            this.dx = -this.dx * this.elasticity;
-        }
-        
-        if(this.y + this.dy > canvas.height-this.radius) {
-            this.dy = -this.dy * this.elasticity; 
-            this.dx *= this.friction; 
+        if(wallCollisions) {
+            if(this.x + this.dx > canvas.width-this.radius || this.x + this.dx < this.radius) {
+                this.dx = -this.dx * this.elasticity;
+            }
+            
+            if(this.y + this.dy > canvas.height-this.radius) {
+                this.dy = -this.dy * this.elasticity; 
+                this.dx *= this.friction; 
+            } else {
+                this.dy += this.gravity; 
+            }
         } else {
-            this.dy += this.gravity; 
+            if(this.x + this.dx > canvas.width-this.radius) {
+                this.x = this.radius;
+            } else if(this.x + this.dx < this.radius) {
+                this.x = canvas.width-this.radius;
+            }
+            
+            if(this.y + this.dy > canvas.height-this.radius) {
+                this.dy = -this.dy * this.elasticity; 
+                this.dx *= this.friction; 
+            } else {
+                this.dy += this.gravity; 
+            }
         }
-
+        this.dy -= ((this.dy * this.friction)/1000)
+        this.dx -= ((this.dx * this.friction)/1000)
         this.x += this.dx;
         this.y += this.dy;
+    }    
+}
+
+class Rectangle {
+    constructor(x, y, dx, dy, width, height) {
+        this.x = x;
+        this.y = y;
+        this.dx = dx;
+        this.dy = dy;
+        this.width = width;
+        this.height = height;
+        this.weight = (this.width + this.height)/2 * 0.1;
+        this.gravity = Gravity * this.weight; 
+        this.friction = 0.8;
+        this.elasticity = 0.9;
+        this.angle = 0;
+        this.rotationSpeed = 0;
+    }
+
+    draw() {
+        ctx.save();
+
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+
+        var angleInRadians = this.angle * Math.PI / 180;
+        ctx.rotate(angleInRadians);
+
+        ctx.beginPath();
+        ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
+        ctx.fillStyle = "white";
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.restore();
+    }
+
+    update() {
+        // Update position
+        if(wallCollisions) {
+            if(this.x + this.dx > canvas.width - this.width || this.x + this.dx < 0) {
+                this.dx = -this.dx * this.elasticity;
+            }
+            
+            if(this.y + this.dy > canvas.height - this.height || this.y + this.dy < 0) {
+                this.dy = -this.dy * this.elasticity; 
+                this.dx *= this.friction;
+            } else {
+                this.dy += this.gravity; 
+            }
+        }
+
+        else{
+            if(this.x + this.dx > canvas.width - this.width) {
+                this.x = this.width;
+            } else if(this.x + this.dx < 0) {
+                this.x = canvas.width - this.width;
+            }
+            
+            if(this.y + this.dy > canvas.height - this.height) {
+                this.dy = -this.dy * this.elasticity; 
+                this.dx *= this.friction;
+            } else {
+                this.dy += this.gravity; 
+            }
+        }
+    
+        // Apply the velocity
+        this.x += this.dx;
+        this.y += this.dy;
+
+        // Update rotation
+        this.angle += this.rotationSpeed;
     }
 }
 
-var balls = [
-    // new Ball(canvas.width / 2, canvas.height - 600, 0, 0, 10),
-    // new Ball(canvas.width / 3, canvas.height - 600, 0, 0, 10),
-    // new Ball(canvas.width / 4, canvas.height - 600, 0, 0, 10),
-];
+var balls = [];
+var rectangles = [];
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -161,6 +286,17 @@ function draw() {
         balls[i].update();
     }
 
+    for(var i = 0; i < rectangles.length; i++) {
+        rectangles[i].draw();
+        rectangles[i].update();
+    }
+
+    for(var i = 0; i < balls.length; i++) {
+        for(var j = 0; j < rectangles.length; j++) {
+            ballRectCollide(balls[i], rectangles[j]);
+        }
+    }
+
     if(isMouseDown) {
         ctx.beginPath();
         ctx.arc(mouseX, mouseY, radius, 0, Math.PI*2);
@@ -182,7 +318,7 @@ function draw() {
                 var distance = Math.sqrt(dx * dx + dy * dy);
     
                 if(distance < balls[i].radius + balls[j].radius) {
-                    collide(balls[i], balls[j]);
+                    ballCollide(balls[i], balls[j]);
                 }
             }
         }
@@ -194,14 +330,14 @@ function draw() {
 draw();
 
 function curve(x) {
-    var a = -0.001;
+    var a = -0.002;
     var h = canvas.width / 2; 
     var k = canvas.height-40;
     return a * Math.pow(x - h, 2) + k;
 }
 
 function curveDerivative(x) {
-    var a = -0.001;
+    var a = -0.002;
     var h = canvas.width / 2; 
     return 2 * a * (x - h);
 }
@@ -226,14 +362,13 @@ function handleCurveCollision(ball) {
     }
 }
 
-
 function distance(x1, y1, x2, y2) {
     var dx = x1 - x2;
     var dy = y1 - y2;
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-function collide(ball1, ball2) {
+function ballCollide(ball1, ball2) {
     // Calculate the distance between the balls
     var dx = ball1.x - ball2.x;
     var dy = ball1.y - ball2.y;
@@ -273,5 +408,43 @@ function collide(ball1, ball2) {
         ball1.y -= overlap * Math.sin(angle) / 2;
         ball2.x += overlap * Math.cos(angle) / 2;
         ball2.y += overlap * Math.sin(angle) / 2;
+    }
+}
+
+
+function ballRectCollide(ball, rect) {
+    // Find the closest point to the ball within the rectangle
+    var closestX = Math.max(rect.x, Math.min(ball.x, rect.x + rect.width));
+    var closestY = Math.max(rect.y, Math.min(ball.y, rect.y + rect.height));
+
+    // Calculate the distance between the ball's center and this closest point
+    var dx = ball.x - closestX;
+    var dy = ball.y - closestY;
+    var distance = Math.sqrt(dx * dx + dy * dy);
+
+    // If the distance is less than the ball's radius, there's a collision
+    if (distance < ball.radius) {
+        // Calculate the angle of the collision
+        var angle = Math.atan2(dy, dx);
+
+        // Calculate the components of the velocity of the ball
+        var velocity = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        var direction = Math.atan2(ball.dy, ball.dx);
+
+        // Calculate the new velocity of the ball
+        var velocityX = velocity * Math.cos(direction - angle);
+        var velocityY = velocity * Math.sin(direction - angle);
+
+        // The final velocities after collision are calculated considering the mass and elasticity
+        var finalVelocityX = ((ball.weight - rect.weight) * velocityX + 2 * rect.weight * 0) / (ball.weight + rect.weight) * ball.elasticity;
+
+        // Convert velocities back to vectors
+        ball.dx = Math.cos(angle) * finalVelocityX + Math.cos(angle + Math.PI/2) * velocityY;
+        ball.dy = Math.sin(angle) * finalVelocityX + Math.sin(angle + Math.PI/2) * velocityY;
+
+        // Separate the ball and rectangle to prevent sticking
+        var overlap = ball.radius - distance;
+        ball.x += overlap * Math.cos(angle);
+        ball.y += overlap * Math.sin(angle);
     }
 }

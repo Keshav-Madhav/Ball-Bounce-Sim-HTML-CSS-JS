@@ -8,8 +8,14 @@
 <body style="background: black; padding: 0; margin: 0;">
     <button id="curve" style="position: absolute;">Show Curve</button>
     <button id="ball-collision" style="position: absolute; top: 20px;">Disable Ball Collision</button>
-    <input type="number" id="gravity" style="position: absolute; top: 45px;" placeholder="Gravity">
+    <button id="wall-collision" style="position: absolute; top: 40px;">Disable Wall Collision</button>
+    <label for="toggle" id="toggle-label" style="position: absolute; right: 40px; color: white;">Create Rectangle:</label>
+    <input type="checkbox" name="toggle" id="toggle" style="position: absolute; right: 20px;">
+    <!-- <input type="number" id="width" style="position: absolute; top: 20px;  right: 20px;" placeholder="Width">
+    <input type="number" id="height" style="position: absolute; top: 40px;  right: 20px;" placeholder="Height"> -->
+    <input type="number" id="gravity" style="position: absolute; top: 25px; right: 20px;" placeholder="Gravity">
     <p id="ball-count" style="position: absolute; top: 55px; color: white;">Ball Count: 0</p>
+    <button id="clear" style="position: absolute; top: 95px;">Clear board</button>
     <canvas id="canvas" style="padding: 0; margin: 0;"></canvas>
 </body>
 <script src="script.js"></script>
