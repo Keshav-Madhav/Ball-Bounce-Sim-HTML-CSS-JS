@@ -108,6 +108,7 @@ function handleEnd(event) {
         }
         balls.push(ball);
         ballcount++;
+        ballCount.innerHTML = "Ball Count: " + ballcount;
     }
 
     isMouseDown = false;
@@ -330,14 +331,14 @@ function draw() {
 draw();
 
 function curve(x) {
-    var a = -0.002;
+    var a = -0.0012;
     var h = canvas.width / 2; 
     var k = canvas.height-40;
     return a * Math.pow(x - h, 2) + k;
 }
 
 function curveDerivative(x) {
-    var a = -0.002;
+    var a = -0.0012;
     var h = canvas.width / 2; 
     return 2 * a * (x - h);
 }
