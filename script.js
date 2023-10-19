@@ -41,6 +41,22 @@ wallCollisionBtn.addEventListener('click', () => {
 
 var toggle = document.getElementById('toggle');
 
+const trailToggle = document.getElementById('trail-toggle');
+trailToggle.addEventListener('change', () => {
+    for (let ball of balls) {
+        ball.showTrails = trailToggle.checked;
+    }
+});
+
+const trailLengthInput = document.getElementById('trail-length');
+let trailLength = 50;
+trailLengthInput.addEventListener('change', () => {
+    for (let ball of balls) {
+        ball.maxTrailLength = trailLengthInput.value;
+        trailLength = trailLengthInput.value;
+    }
+});
+
 // var blockWidth = document.getElementById('width');
 // var rectWidth = 20;
 // blockWidth.addEventListener('change', () => {
@@ -147,23 +163,43 @@ class Ball {
         this.gravity = Gravity * this.weight; 
         this.friction = 0.8;
         this.elasticity = 0.9;
+        this.trail = [];
+        this.maxTrailLength = trailLength;
+        this.showTrails = true;
     }
 
     draw() {
+        if(this.showTrails) {
+            for (let i = 0; i < this.trail.length; i++) {
+                ctx.beginPath();
+                ctx.arc(this.trail[i].x, this.trail[i].y, this.radius * ((i + 1) / this.trail.length), 0, Math.PI*2);
+                ctx.fillStyle = `rgba(180, 180, 180, ${((i + 1) / this.trail.length)})`;
+                ctx.fill();
+            }
+        }
+    
+        // Draw the actual ball
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
         ctx.fillStyle = "white";
         ctx.fill();
         ctx.closePath();
     }
-
+    
     update() {
+        if(this.showTrails) {
+            this.trail.push({x: this.x, y: this.y});
+            while (this.trail.length > this.maxTrailLength) {
+                this.trail.shift();
+            }
+        }
         if(wallCollisions) {
             if(this.x + this.dx > canvas.width-this.radius || this.x + this.dx < this.radius) {
                 this.dx = -this.dx * this.elasticity;
             }
             
             if(this.y + this.dy > canvas.height-this.radius) {
+                this.y = canvas.height-this.radius;
                 this.dy = -this.dy * this.elasticity; 
                 this.dx *= this.friction; 
             } else {
@@ -177,6 +213,7 @@ class Ball {
             }
             
             if(this.y + this.dy > canvas.height-this.radius) {
+                this.y = canvas.height-this.radius;
                 this.dy = -this.dy * this.elasticity; 
                 this.dx *= this.friction; 
             } else {
