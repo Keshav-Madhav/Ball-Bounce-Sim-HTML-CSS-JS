@@ -42,19 +42,23 @@ wallCollisionBtn.addEventListener('click', () => {
 var toggle = document.getElementById('toggle');
 
 const trailToggle = document.getElementById('trail-toggle');
+let showTrails = true;
 trailToggle.addEventListener('change', () => {
     for (let ball of balls) {
         ball.showTrails = trailToggle.checked;
     }
+    
+    showTrails = trailToggle.checked;
 });
 
 const trailLengthInput = document.getElementById('trail-length');
-let trailLength = 50;
+let trailLength = 20;
 trailLengthInput.addEventListener('change', () => {
     for (let ball of balls) {
         ball.maxTrailLength = trailLengthInput.value;
-        trailLength = trailLengthInput.value;
     }
+
+    trailLength = trailLengthInput.value;
 });
 
 // var blockWidth = document.getElementById('width');
@@ -165,7 +169,7 @@ class Ball {
         this.elasticity = 0.9;
         this.trail = [];
         this.maxTrailLength = trailLength;
-        this.showTrails = true;
+        this.showTrails = showTrails;
     }
 
     draw() {
@@ -173,7 +177,7 @@ class Ball {
             for (let i = 0; i < this.trail.length; i++) {
                 ctx.beginPath();
                 ctx.arc(this.trail[i].x, this.trail[i].y, this.radius * ((i + 1) / this.trail.length), 0, Math.PI*2);
-                ctx.fillStyle = `rgba(180, 180, 180, ${((i + 1) / this.trail.length)})`;
+                ctx.fillStyle = `rgba(220, 220, 220, ${((i + 1) / this.trail.length)})`;
                 ctx.fill();
             }
         }
@@ -194,7 +198,11 @@ class Ball {
             }
         }
         if(wallCollisions) {
-            if(this.x + this.dx > canvas.width-this.radius || this.x + this.dx < this.radius) {
+            if(this.x + this.dx > canvas.width-this.radius) {
+                this.x = canvas.width-this.radius;  // add this line
+                this.dx = -this.dx * this.elasticity;
+            } else if(this.x + this.dx < this.radius) {
+                this.x = this.radius;  // add this line
                 this.dx = -this.dx * this.elasticity;
             }
             
@@ -439,25 +447,36 @@ function ballCollide(ball1, ball2) {
     ball2.dx = Math.cos(angle) * finalVelocity2x + Math.cos(angle + Math.PI/2) * velocity2y;
     ball2.dy = Math.sin(angle) * finalVelocity2x + Math.sin(angle + Math.PI/2) * velocity2y;
 
-    if(distance < ball1.radius + ball2.radius) {
+    if (distance < ball1.radius + ball2.radius) {
         var overlap = ball1.radius + ball2.radius - distance;
         var angle = Math.atan2(ball2.y - ball1.y, ball2.x - ball1.x);
         ball1.x -= overlap * Math.cos(angle) / 2;
         ball1.y -= overlap * Math.sin(angle) / 2;
         ball2.x += overlap * Math.cos(angle) / 2;
         ball2.y += overlap * Math.sin(angle) / 2;
+    } else {
+        // If balls are not overlapping, they should not be moving towards each other
+        var relativeVelocityX = ball2.dx - ball1.dx;
+        var relativeVelocityY = ball2.dy - ball1.dy;
+        var relativeVelocityDotProduct = dx * relativeVelocityX + dy * relativeVelocityY;
+        if (relativeVelocityDotProduct > 0) {
+            return;  // Balls are moving apart, not colliding
+        }
     }
 }
 
-
 function ballRectCollide(ball, rect) {
+    // Translate coordinates to rectangle perspective
+    var cx = Math.cos(-rect.angle) * (ball.x - rect.x) - Math.sin(-rect.angle) * (ball.y - rect.y) + rect.x;
+    var cy = Math.sin(-rect.angle) * (ball.x - rect.x) + Math.cos(-rect.angle) * (ball.y - rect.y) + rect.y;
+
     // Find the closest point to the ball within the rectangle
-    var closestX = Math.max(rect.x, Math.min(ball.x, rect.x + rect.width));
-    var closestY = Math.max(rect.y, Math.min(ball.y, rect.y + rect.height));
+    var closestX = Math.max(rect.x, Math.min(cx, rect.x + rect.width));
+    var closestY = Math.max(rect.y, Math.min(cy, rect.y + rect.height));
 
     // Calculate the distance between the ball's center and this closest point
-    var dx = ball.x - closestX;
-    var dy = ball.y - closestY;
+    var dx = cx - closestX;
+    var dy = cy - closestY;
     var distance = Math.sqrt(dx * dx + dy * dy);
 
     // If the distance is less than the ball's radius, there's a collision
